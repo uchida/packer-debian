@@ -1,0 +1,134 @@
+{
+  "variables": {
+    "atlas_username": "uchida",
+    "atlas_name": "debian",
+    "version": "0.0.0",
+
+    "iso_url": "http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/mini.iso",
+    "iso_checksum": "72da5874947570cb6eb375ad183b9dcd4ab54f03ddea9795835e73e1eaea1cbf",
+    "iso_checksum_type": "sha256",
+    "boot_command": "<esc><wait>install auto=true fb=false locale=en_US netcfg/get_hostname=localhost netcfg/get_domain=localdomain keyboard-configuration/xkb-keymap=us grub-installer/bootdev=/dev/sda",
+    "boot_wait": "60s",
+    "disk_size": "8192",
+    "http_directory": "http",
+    "ssh_username": "root",
+    "ssh_password": "packer",
+    "ssh_wait_timeout": "3600s",
+    "shutdown_command": "poweroff",
+    "headless": "true"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "guest_os_type": "Debian_64",
+
+      "vm_name": "{{user `atlas_name`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "boot_command": "{{user `boot_command`}} preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>",
+      "boot_wait": "{{user `boot_wait`}}",
+      "disk_size": "{{user `disk_size`}}",
+      "http_directory": "http",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+      "shutdown_command": "{{user `shutdown_command`}}",
+      "headless": "{{user `headless`}}"
+    },
+    {
+      "type": "vmware-iso",
+      "guest_os_type": "debian-64",
+      "vm_name": "{{user `atlas_name`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "boot_command": "{{user `boot_command`}} preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>",
+      "boot_wait": "{{user `boot_wait`}}",
+      "disk_size": "{{user `disk_size`}}",
+      "http_directory": "http",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+      "shutdown_command": "{{user `shutdown_command`}}",
+      "headless": "{{user `headless`}}"
+    },
+    {
+      "type": "qemu",
+      "vm_name": "{{user `atlas_name`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "boot_command": "{{user `boot_command`}} preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg<enter>",
+      "boot_wait": "{{user `boot_wait`}}",
+      "disk_size": "{{user `disk_size`}}",
+      "http_directory": "http",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "ssh_wait_timeout": "{{user `ssh_wait_timeout`}}",
+      "shutdown_command": "{{user `shutdown_command`}}",
+      "headless": "{{user `headless`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "scripts": [
+        "scripts/base.sh",
+        "scripts/vagrant.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "script": "scripts/vmguest.sh",
+      "only": ["virtualbox-iso", "vmware-iso"]
+    },
+    {
+      "type": "shell",
+      "script": "scripts/cleanup.sh"
+    }
+  ],
+  "post-processors": [
+    [
+      {
+        "type": "vagrant",
+        "vagrantfile_template": "vagrantfile.template",
+        "keep_input_artifact": false
+      },
+      {
+        "type": "atlas",
+        "only": ["vmware-iso"],
+        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "artifact_type": "vagrant.box",
+        "metadata": {
+          "provider": "vmware_desktop",
+          "version": "{{user `version`}}"
+        }
+      },
+      {
+        "type": "atlas",
+        "only": ["qemu"],
+        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "artifact_type": "vagrant.box",
+        "metadata": {
+          "provider": "libvirt",
+          "version": "{{user `version`}}"
+        }
+      },
+      {
+        "type": "atlas",
+        "only": ["virtualbox-iso"],
+        "artifact": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+        "artifact_type": "vagrant.box",
+        "metadata": {
+          "provider": "virtualbox",
+          "version": "{{user `version`}}"
+        }
+      }
+    ]
+  ],
+  "push": {
+    "name": "{{user `atlas_username`}}/{{user `atlas_name`}}",
+    "vcs": true
+  }
+}

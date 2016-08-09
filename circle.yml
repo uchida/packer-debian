@@ -1,0 +1,45 @@
+machine:
+  environment:
+    PATH: "${HOME}/bin:${HOME}/vagrant/bin:${PATH}"
+    PACKER_URL: "https://releases.hashicorp.com/packer/0.10.0/packer_0.10.0_linux_amd64.zip"
+    PACKER_SHA256SUM: "eadd33bc0f8fa42034059fc1cda5f43ed6f540746e767480f0706ebed49b45e5"
+    VAGRANT_URL: "https://releases.hashicorp.com/vagrant/1.8.1/vagrant_1.8.1_x86_64.deb"
+    VAGRANT_SHA256SUM: "ed0e1ae0f35aecd47e0b3dfb486a230984a08ceda3b371486add4d42714a693d"
+
+dependencies:
+  cache_directories:
+    - "~/vagrant"
+    - "~/bin"
+  override:
+    - |
+      if [ ! -d "${HOME}/vagrant" ]; then
+        curl -Lo vagrant.deb "${VAGRANT_URL}"
+        sha256sum vagrant.deb
+        echo "${VAGRANT_SHA256SUM}  vagrant.deb" | sha256sum -c || exit $?
+        sudo dpkg -i vagrant.deb
+        cp -aR /opt/vagrant "${HOME}/vagrant"
+      fi
+    - vagrant version
+    - cp vagrantfile.template Vagrantfile
+    - |
+      if [ ! -e "${HOME}/bin/packer" ]; then
+        curl -Lo packer.zip "${PACKER_URL}"
+        echo "${PACKER_SHA256SUM}  packer.zip" | sha256sum -c || exit $?
+        unzip -d ~/bin packer.zip
+      fi
+    - packer version
+
+test:
+  override:
+    - find scripts -name '*.sh' -print0 | xargs -0 sh -n
+    - vagrant version
+    - packer validate template.json
+
+deployment:
+  release:
+    tag: /[0-9]+\.[0-9]+\.[0-9]+/
+    commands:
+      - |
+        sed -i.orig "s/0.0.0/${CIRCLE_TAG}/" template.json
+        diff -u template.json{.orig,} || :
+      - packer push template.json
