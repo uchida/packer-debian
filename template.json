@@ -4,8 +4,8 @@
     "atlas_name": "debian",
     "version": "0.0.0",
 
-    "iso_url": "http://ftp.debian.org/debian/dists/wheezy/main/installer-amd64/current/images/netboot/mini.iso",
-    "iso_checksum": "72da5874947570cb6eb375ad183b9dcd4ab54f03ddea9795835e73e1eaea1cbf",
+    "iso_url": "http://ftp.debian.org/debian/dists/jessie/main/installer-amd64/current/images/netboot/mini.iso",
+    "iso_checksum": "e03c10b87e6b2259908875581f2854b4eae1fd1d2943dbccc5296e2be58cf9a2",
     "iso_checksum_type": "sha256",
     "boot_command": "<esc><wait>install auto=true fb=false locale=en_US netcfg/get_hostname=localhost netcfg/get_domain=localdomain keyboard-configuration/xkb-keymap=us grub-installer/bootdev=/dev/sda",
     "boot_wait": "60s",
